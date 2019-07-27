@@ -52,6 +52,7 @@ static const Rule rules[] = {
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
 static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+static int attachbelow = 1;    /* 1 means attach after the currently active window */
 
 #include "gaplessgrid.c"
 #include "fibonacci.c"
@@ -115,6 +116,7 @@ static Key keys[] = {
     { MODKEY,                       XK_s,      setlayout,      {.v = &layouts[6]} },
     { MODKEY,                       XK_w,      setlayout,      {.v = &layouts[7]} },
 	{ MODKEY,                       XK_c,      setlayout,      {.v = &layouts[8]} },
+    { MODKEY,                       XK_Escape,           toggleAttachBelow,           {0} },
     /*{ MODKEY|ControlMask,		    XK_comma,  cyclelayout,    {.i = -1 } },*/
 	{ MODKEY,                       XK_space, cyclelayout,    {.i = +1 } },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
