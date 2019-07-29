@@ -106,6 +106,7 @@ typedef struct Client Client;
 struct Client {
 	char name[256];
 	float mina, maxa;
+	float cfact;
 	int x, y, w, h;
 	int oldx, oldy, oldw, oldh;
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
@@ -259,6 +260,7 @@ static void setfocus(Client *c);
 static void setfullscreen(Client *c, int fullscreen);
 static void setgaps(const Arg *arg);
 static void setlayout(const Arg *arg);
+static void setcfact(const Arg *arg);
 static void setmfact(const Arg *arg);
 static void setup(void);
 static void seturgent(Client *c, int urg);
@@ -1464,6 +1466,7 @@ manage(Window w, XWindowAttributes *wa)
 	c->w = c->oldw = wa->width;
 	c->h = c->oldh = wa->height;
 	c->oldbw = wa->border_width;
+	c->cfact = 1.0;
 
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
@@ -2121,6 +2124,24 @@ setlayout(const Arg *arg)
 		drawbar(selmon);
 }
 
+void setcfact(const Arg *arg) {
+	float f;
+	Client *c;
+
+	c = selmon->sel;
+
+	if(!arg || !c || !selmon->lt[selmon->sellt]->arrange)
+		return;
+	f = arg->f + c->cfact;
+	if(arg->f == 0.0)
+		f = 1.0;
+	else if(f < 0.25 || f > 4.0)
+		return;
+	c->cfact = f;
+	arrange(selmon);
+}
+
+
 /* arg > 1.0 will set mfact absolutely */
 void
 setmfact(const Arg *arg)
@@ -2295,9 +2316,15 @@ void
 tile(Monitor *m)
 {
 	unsigned int i, n, h, mw, my, ty;
+	float mfacts = 0, sfacts = 0;
 	Client *c;
 
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
+		if (n < m->nmaster)
+			mfacts += c->cfact;
+		else
+			sfacts += c->cfact;
+	}
 	if (n == 0)
 		return;
 	if(n == 1){
@@ -2312,13 +2339,15 @@ tile(Monitor *m)
 		mw = m->ww - m->gappx;
 	for (i = 0, my = ty = m->gappx, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			h = (m->wh - my) / (MIN(n, m->nmaster) - i) - m->gappx;
+			h = (m->wh - my) * (c->cfact / mfacts) - m->gappx;
 			resize(c, m->wx + m->gappx, m->wy + my, mw - (2*c->bw) - m->gappx, h - (2*c->bw), 0);
 			my += HEIGHT(c) + m->gappx;
+			mfacts -= c->cfact;
 		} else {
-			h = (m->wh - ty) / (n - i) - m->gappx;
+			h = (m->wh - ty) * (c->cfact / sfacts) - m->gappx;
 			resize(c, m->wx + mw + m->gappx, m->wy + ty, m->ww - mw - 2*(c->bw + m->gappx), h - (2*c->bw), 0);
 			ty += HEIGHT(c) + m->gappx;
+			sfacts -= c->cfact;
 		}
 }
 
@@ -3175,12 +3204,19 @@ void
 centeredmaster(Monitor *m)
 {
 	unsigned int i, n, h, mw, mx, my, oty, ety, tw;
+	float mfacts = 0, lfacts = 0, rfacts = 0;
 	Client *c;
 	
 	/* count number of clients in the selected monitor */
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
-	
-	if (n == 0)
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++) {
+		if (n < m->nmaster)
+			mfacts += c->cfact;
+		else if ((n - m->nmaster) % 2) 
+			lfacts += c->cfact;
+		else
+			rfacts += c->cfact;
+	}
+    if (n == 0)
 		return;
 	if(n == 1){
 		c = nexttiled(m->clients);
@@ -3212,7 +3248,7 @@ centeredmaster(Monitor *m)
 	if (i < m->nmaster) {
 		/* nmaster clients are stacked vertically, in the center
 		 * of the screen */
-		h = (m->wh - my) / (MIN(n, m->nmaster) - i);
+		h = (m->wh - my) * (c->cfact / mfacts);
 		if(m->nmaster >= n)
 			resize(c, m->wx + mx + m->gappx, m->wy + my, mw - 2*(c->bw + m->gappx),
 		       h - (2*c->bw) - m->gappx, 0);
@@ -3223,10 +3259,11 @@ centeredmaster(Monitor *m)
 			resize(c, m->wx + mx + m->gappx, m->wy + my, mw - 2*(c->bw) - m->gappx,
 		       h - (2*c->bw) - m->gappx, 0);
 		my += HEIGHT(c) + m->gappx;
+		mfacts -= c->cfact;
 	} else {
 		/* stack clients are stacked vertically */
 		if ((i - m->nmaster) % 2) {
-			h = (m->wh - ety) / ( (1 + n - i) / 2);
+			h = (m->wh - ety) * (c->cfact / lfacts);
 			if(m->nmaster == 0)
 				resize(c, m->wx + m->gappx, m->wy + ety, tw - 2*(c->bw) - m->gappx,
 			       h - (2*c->bw) - m->gappx, 0);
@@ -3234,11 +3271,13 @@ centeredmaster(Monitor *m)
 				resize(c, m->wx + m->gappx, m->wy + ety, tw - 2*(c->bw + m->gappx),
 			       h - (2*c->bw) - m->gappx, 0);
 			ety += HEIGHT(c) + m->gappx;
+			lfacts -= c->cfact;
 		} else {
-			h = (m->wh - oty) / ((1 + n - i) / 2);
+			h = (m->wh - oty) * (c->cfact / rfacts);
 			resize(c, m->wx + mx + mw + m->gappx, m->wy + oty,
 			       tw - 2*(c->bw + m->gappx), h - (2*c->bw) - m->gappx, 0);
 			oty += HEIGHT(c) + m->gappx;
+			rfacts -= c->cfact;
 		}
 	}
 }
