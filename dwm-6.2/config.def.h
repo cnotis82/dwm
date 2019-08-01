@@ -1,5 +1,10 @@
 /* See LICENSE file for copyright and license details. */
-
+#define XF86AudioPrev           0x1008ff16
+#define XF86AudioPlay           0x1008ff14
+#define XF86AudioNext           0x1008ff17
+#define XF86AudioMute           0x1008ff12
+#define XF86AudioLowerVolume    0x1008ff11
+#define XF86AudioRaiseVolume    0x1008ff13
 /* appearance */
 static const unsigned int borderpx  = 4;        /* border pixel of windows */
 static const unsigned int gappx     = 10;        /* gaps between windows */
@@ -57,18 +62,23 @@ static const Rule rules[] = {
 	 */
 	/* class      instance    title       tags mask     isfloating   isterminal noswallow monitor */
 	{ "Gimp",     NULL,       NULL,       1 << 6,            1,     0, 0,      -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 1,       0,      0, 0,     -1 },
+	{ "firefox",  NULL,       NULL,       1 << 1,       0,      0, 0,     -1 },
 	{ "Thunderbird",  NULL,       NULL,   1 << 1,       0,      0, 0,     -1 },
 	{ "St",       NULL,       NULL,       1,       0,         1, 1,  -1 },
 	{ NULL,  "Viber",       NULL,       1 << 3,       0,      0, 0,     -1 },
 	{ "Slack",  NULL,       NULL,       1 << 3,       0,      0, 0,     -1 },
-	{ "Mpv",  NULL,       NULL,       1 << 4,       0,        0, 0,   -1 },
-	{ "Vlc",  NULL,       NULL,       1 << 4,       0,        0, 0,   -1 },
+	{ "Mpv",  NULL,       NULL,       1 << 8,       0,        0, 0,   -1 },
+	{ "Vlc",  NULL,       NULL,       1 << 8,       0,        0, 0,   -1 },
 	{ "Subl3",  NULL,       NULL,       1 << 5,       0,      0, 0,     -1 },
+	{ "Code",  NULL,       NULL,       1 << 5,       0,      0, 0,     -1 },
 	{ "Gvim",  NULL,       NULL,       1 << 5,       0,       0, 0,    -1 },
 	{ "Zathura",  NULL,       NULL,       1 << 6,       0,    0, 0,       -1 },
 	{ "Sxiv",  NULL,       NULL,       1 << 6,       0,       0, 0,     -1 },
 	{ "DesktopEditors",  NULL,       NULL,       1 << 6,       0, 0,0,           -1 },
+	{ "Arandr",  NULL,       NULL,       1 << 7,       0, 0,0,           -1 },
+	{ "Gufw.py",  NULL,       NULL,       1 << 7,       0, 0,0,           -1 },
+	{ "org.remmina.Remmina",  NULL,       NULL,       1 << 8,       0,        0, 0,   -1 },
+	{ "Filezilla",  NULL,       NULL,       1 << 8,       0,        0, 0,   -1 },
 
 };
 
@@ -112,7 +122,13 @@ static const char *roficmd[] = { "rofi", "-show", "combi", NULL };
 static const char *termcmd[]  = { "st", NULL };
 static const char scratchpadname[] = "scratchpad";
 static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
-
+static const char *volmcmd[]       = { "amixer", "-q", "sset", "Master", "toggle", NULL };
+static const char *voldcmd[]       = { "amixer", "-q", "sset", "Master", "5%-", NULL };
+static const char *volucmd[]       = { "amixer", "-q", "sset", "Master", "5%+", NULL };
+static const char *mpdstopcmd[]    = { "mpc", "toggle", NULL };
+static const char *mpdprevcmd[]    = { "mpc", "prev", NULL };
+static const char *mpdnextcmd[]    = { "mpc", "next", NULL };
+//static const char *scrotcmd[]    = SHCMD("scrot && mv *_scrot.png ~/Pictures/");  //{"sleep 0.2;scrot", "&&", "mv", "*_scrot.png", "~/Pictures/",  NULL };
 #include "focusurgent.c"
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -120,6 +136,13 @@ static Key keys[] = {
 	{ MODKEY,                       XK_a,      spawn,          {.v = roficmd } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
+    { 0,                            XF86AudioLowerVolume, spawn, {.v = voldcmd } },
+	{ 0,                            XF86AudioMute, spawn,        {.v = volmcmd } },
+	{ 0,                            XF86AudioRaiseVolume, spawn, {.v = volucmd } },
+    { 0,                            XF86AudioPrev, spawn, {.v = mpdprevcmd } },
+	{ 0,                            XF86AudioPlay, spawn,        {.v = mpdstopcmd } },
+	{ 0,                            XF86AudioNext, spawn, {.v = mpdnextcmd } },
+    { 0,							XK_Print,  spawn,		   SHCMD("scrot && mv *_scrot.png ~/Pictures/") },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_w,      tabmode,        {-1} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
