@@ -92,14 +92,14 @@ static int attachbelow = 1;    /* 1 means attach after the currently active wind
 #include "fibonacci.c"
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "[]=",      tile },    /* first entry is default */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
+	{ "[T]",      tile },    /* first entry is default */
+	{ "[F]",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
-	{ "|M|",      centeredmaster },
-	{ ">M>",      centeredfloatingmaster },
-    { "###",	  gaplessgrid },
- 	{ "[@]",      spiral },
- 	{ "[\\]",     dwindle },
+	{ "[3c]",      centeredmaster },
+	{ "[3cf]",      centeredfloatingmaster },
+    { "[G]",	  gaplessgrid },
+ 	{ "[Bs]",      spiral },
+ 	{ "[Bd]",     dwindle },
 	{ "[D]",      deck },
 	{ NULL,       NULL },
 };
